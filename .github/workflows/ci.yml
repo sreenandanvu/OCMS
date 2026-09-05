@@ -32,4 +32,5 @@ jobs:
           cache: npm
           cache-dependency-path: server/package.json
       - run: npm install
+      - run: node scripts/repair-index.js
       - run: node --check src/index.js
