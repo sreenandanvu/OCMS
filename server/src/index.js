@@ -4,41 +4,46 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
 dotenv.config();
-const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
-app.use(express.json());
-
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true }, email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, role: { type: String, enum: ['admin','student','faculty'], default: 'student' }
-}, { timestamps: true });
-const User = mongoose.model('User', userSchema);
-
-const studentSchema = new mongoose.Schema({ name: String, registerNo: { type: String, unique: true }, email: String, course: String, semester: Number, phone: String, status: { type: String, default: 'Active' } }, { timestamps: true });
-const Student = mongoose.model('Student', studentSchema);
-const facultySchema = new mongoose.Schema({ name: String, employeeId: { type: String, unique: true }, email: String, department: String, designation: String, phone: String }, { timestamps: true });
-const Faculty = mongoose.model('Faculty', facultySchema);
-const attendanceSchema = new mongoose.Schema({ student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' }, date: Date, course: String, subject: String, status: { type: String, enum: ['Present','Absent','Late'] } }, { timestamps: true });
-const Attendance = mongoose.model('Attendance', attendanceSchema);
-const examSchema = new mongoose.Schema({ student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' }, exam: String, subject: String, marks: Number, maxMarks: { type: Number, default: 100 }, grade: String }, { timestamps: true });
-const ExamResult = mongoose.model('ExamResult', examSchema);
-
-const auth = (req,res,next) => { try { const token = (req.headers.authorization || '').replace('Bearer ',''); req.user = jwt.verify(token, process.env.JWT_SECRET); next(); } catch { res.status(401).json({message:'Unauthorized'}); } };
-const sign = u => jwt.sign({ id:u._id, role:u.role, name:u.name }, process.env.JWT_SECRET, {expiresIn:'1d'});
-
-app.get('/api/health', (_,res)=>res.json({ok:true, service:'OCMS API'}));
-app.post('/api/auth/register', async (req,res)=>{ try { const {name,email,password,role='student'}=req.body; const exists=await User.findOne({email}); if(exists) return res.status(409).json({message:'Email already registered'}); const user=await User.create({name,email,password:await bcrypt.hash(password,12),role}); res.status(201).json({user:{id:user._id,name:user.name,email:user.email,role:user.role},token:sign(user)}); } catch(e){res.status(400).json({message:e.message});} });
-app.post('/api/auth/login', async (req,res)=>{ const user=await User.findOne({email:req.body.email}); if(!user || !(await bcrypt.compare(req.body.password,user.password))) return res.status(401).json({message:'Invalid credentials'}); res.json({user:{id:user._id,name:user.name,email:user.email,role:user.role},token:sign(user)}); });
-
-for (const [path, Model] of [['students',Student],['faculty',Faculty],['attendance',Attendance],['results',ExamResult]]) {
-  app.get(`/api/${path}`, auth, async (_,res)=>res.json(await Model.find().populate(path==='attendance' || path==='results' ? 'student' : '')));
-  app.post(`/api/${path}`, auth, async (req,res)=>{ try { res.status(201).json(await Model.create(req.body)); } catch(e){res.status(400).json({message:e.message});} });
-  app.put(`/api/${path}/:id`, auth, async (req,res)=>{ try { res.json(await Model.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true})); } catch(e){res.status(400).json({message:e.message});} });
-  app.delete(`/api/${path}/:id`, auth, async (req,res)=>{ await Model.findByIdAndDelete(req.params.id); res.status(204).end(); });
-}
-app.get('/api/dashboard', auth, async (_,res)=>{ const [students,faculty,attendance,results]=await Promise.all([Student.countDocuments(),Faculty.countDocuments(),Attendance.countDocuments(),ExamResult.countDocuments()]); res.json({students,faculty,attendanceRecords:attendance,resultRecords:results}); });
-
-const port=process.env.PORT||5000;
-mongoose.connect(process.env.MONGO_URI||'mongodb://127.0.0.1:27017/ocms').then(()=>app.listen(port,()=>console.log(`OCMS API running on ${port}`))).catch(e=>{console.error('MongoDB connection failed:',e.message); process.exit(1);});
+const app=express();app.use(cors({origin:process.env.CLIENT_URL||'http://localhost:5173'}));app.use(express.json({limit:'8mb'}));
+const oid=mongoose.Schema.Types.ObjectId;
+const userSchema=new mongoose.Schema({name:{type:String,required:true},email:{type:String,required:true,unique:true,lowercase:true},password:{type:String,required:true},role:{type:String,enum:['admin','student','faculty'],default:'student'},active:{type:Boolean,default:true}},{timestamps:true});
+const studentSchema=new mongoose.Schema({name:{type:String,required:true},registerNo:{type:String,required:true,unique:true},email:String,phone:String,dob:String,address:String,course:String,semester:Number,subjects:[String],academicHistory:[{semester:Number,course:String,gpa:Number}],documents:[{name:String,url:String}],status:{type:String,default:'Active'},leaveBalance:{type:Number,default:15}},{timestamps:true});
+const facultySchema=new mongoose.Schema({name:{type:String,required:true},employeeId:{type:String,required:true,unique:true},email:String,phone:String,department:String,designation:String,subjects:[String],classes:[String],timetable:[String]},{timestamps:true});
+const attendanceSchema=new mongoose.Schema({student:{type:oid,ref:'Student',required:true},date:{type:Date,required:true},course:String,semester:Number,subject:String,period:Number,status:{type:String,enum:['Present','Absent','Late'],default:'Present'},markedBy:{type:oid,ref:'User'},sessionCode:String,correctionReason:String},{timestamps:true});
+const examSchema=new mongoose.Schema({name:{type:String,required:true},course:String,semester:Number,date:Date,startTime:String,endTime:String,room:String,students:[oid],subjects:[String],questionPaperUrl:String,published:{type:Boolean,default:false}},{timestamps:true});
+const resultSchema=new mongoose.Schema({exam:{type:oid,ref:'Exam'},student:{type:oid,ref:'Student'},subject:String,internal:Number,marks:Number,maxMarks:{type:Number,default:100},grade:String,gradePoint:Number,published:{type:Boolean,default:false},revaluation:{type:String,enum:['None','Requested','Approved','Rejected'],default:'None'},revaluationReason:String},{timestamps:true});
+const assignmentSchema=new mongoose.Schema({title:String,description:String,subject:String,faculty:{type:oid,ref:'Faculty'},dueDate:Date,resourceUrl:String,submissions:[{student:oid,submittedAt:Date,fileUrl:String,marks:Number,feedback:String}]},{timestamps:true});
+const leaveSchema=new mongoose.Schema({applicant:{type:oid,ref:'User'},student:{type:oid,ref:'Student'},faculty:{type:oid,ref:'Faculty'},from:Date,to:Date,reason:String,status:{type:String,enum:['Pending','Approved','Rejected'],default:'Pending'},decisionNote:String},{timestamps:true});
+const timetableSchema=new mongoose.Schema({course:String,semester:Number,day:String,period:Number,startTime:String,endTime:String,subject:String,faculty:String,room:String},{timestamps:true});
+const communicationSchema=new mongoose.Schema({title:String,message:String,audience:{type:String,default:'All'},author:{type:oid,ref:'User'}},{timestamps:true});
+const documentSchema=new mongoose.Schema({student:{type:oid,ref:'Student'},name:String,type:String,url:String,verified:{type:Boolean,default:false}},{timestamps:true});
+const Model={User:mongoose.model('User',userSchema),Student:mongoose.model('Student',studentSchema),Faculty:mongoose.model('Faculty',facultySchema),Attendance:mongoose.model('Attendance',attendanceSchema),Exam:mongoose.model('Exam',examSchema),Result:mongoose.model('Result',resultSchema),Assignment:mongoose.model('Assignment',assignmentSchema),Leave:mongoose.model('Leave',leaveSchema),Timetable:mongoose.model('Timetable',timetableSchema),Communication:mongoose.model('Communication',communicationSchema),Document:mongoose.model('Document',documentSchema)};
+const secret=()=>process.env.JWT_SECRET||'ocms-development-secret';const sign=u=>jwt.sign({id:u._id,role:u.role,name:u.name},secret(),{expiresIn:'1d'});
+const auth=(req,res,next)=>{try{const t=(req.headers.authorization||'').replace('Bearer ','');req.user=jwt.verify(t,secret());next()}catch{res.status(401).json({message:'Unauthorized'})}};const roles=(...r)=>(req,res,next)=>r.includes(req.user.role)?next():res.status(403).json({message:'Forbidden'});
+app.get('/api/health',(_,res)=>res.json({ok:true,service:'OCMS API',version:'1.0'}));
+app.post('/api/auth/register',async(req,res)=>{try{const {name,email,password,role='student'}=req.body;if(!name||!email||!password)return res.status(400).json({message:'Name, email and password are required'});if(await Model.User.findOne({email}))return res.status(409).json({message:'Email already registered'});if(role==='admin')return res.status(403).json({message:'Admin accounts are created by an administrator'});const u=await Model.User.create({name,email,password:await bcrypt.hash(password,12),role});res.status(201).json({user:{id:u._id,name:u.name,email:u.email,role:u.role},token:sign(u)})}catch(e){res.status(400).json({message:e.message})}});
+app.post('/api/auth/login',async(req,res)=>{try{const u=await Model.User.findOne({email:req.body.email});if(!u||!u.active||!(await bcrypt.compare(req.body.password,u.password)))return res.status(401).json({message:'Invalid credentials'});res.json({user:{id:u._id,name:u.name,email:u.email,role:u.role},token:sign(u)})}catch(e){res.status(500).json({message:e.message})}});
+app.get('/api/auth/me',auth,async(req,res)=>res.json(await Model.User.findById(req.user.id).select('-password')));
+app.get('/api/users',auth,roles('admin'),async(_,res)=>res.json(await Model.User.find().select('-password').sort({createdAt:-1})));
+app.patch('/api/users/:id',auth,roles('admin'),async(req,res)=>res.json(await Model.User.findByIdAndUpdate(req.params.id,req.body,{new:true}).select('-password')));
+const crud=(path,key,opts={})=>{const M=Model[key];app.get('/api/'+path,auth,async(req,res)=>{let q=M.find().sort({createdAt:-1});if(opts.populate)q=q.populate(opts.populate);res.json(await q)});app.post('/api/'+path,auth,async(req,res)=>{try{res.status(201).json(await M.create({...req.body,...(opts.owner?{[opts.owner]:req.user.id}:{})}))}catch(e){res.status(400).json({message:e.message})}});app.put('/api/'+path+'/:id',auth,async(req,res)=>{try{res.json(await M.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true}))}catch(e){res.status(400).json({message:e.message})}});app.delete('/api/'+path+'/:id',auth,roles('admin'),async(req,res)=>{await M.findByIdAndDelete(req.params.id);res.status(204).end()})};
+crud('students','Student');crud('faculty','Faculty');crud('attendance','Attendance',{populate:'student'});crud('exams','Exam');crud('results','Result',{populate:['student','exam']});crud('assignments','Assignment',{populate:'faculty'});crud('leaves','Leave',{populate:['student','faculty']});crud('timetable','Timetable');crud('communications','Communication',{populate:'author',owner:'author'});crud('documents','Document',{populate:'student'});
+app.patch('/api/attendance/bulk',auth,async(req,res)=>{try{const records=(req.body.records||[]).map(x=>({...x,markedBy:req.user.id}));res.status(201).json(await Model.Attendance.insertMany(records))}catch(e){res.status(400).json({message:e.message})}});
+app.post('/api/attendance/qr-checkin',auth,async(req,res)=>{try{const {student,sessionCode,subject,course,semester}=req.body;if(!student||!sessionCode)return res.status(400).json({message:'Student and session code are required'});res.status(201).json(await Model.Attendance.create({student,sessionCode,subject,course,semester,date:new Date(),status:'Present',markedBy:req.user.id}))}catch(e){res.status(400).json({message:e.message})}});
+app.patch('/api/attendance/:id/correct',auth,roles('admin','faculty'),async(req,res)=>res.json(await Model.Attendance.findByIdAndUpdate(req.params.id,{status:req.body.status,correctionReason:req.body.reason,markedBy:req.user.id},{new:true})));
+app.patch('/api/leaves/:id/status',auth,roles('admin','faculty'),async(req,res)=>{const {status,decisionNote}=req.body;res.json(await Model.Leave.findByIdAndUpdate(req.params.id,{status,decisionNote},{new:true}))});
+app.patch('/api/results/:id/publish',auth,roles('admin','faculty'),async(req,res)=>res.json(await Model.Result.findByIdAndUpdate(req.params.id,{published:true},{new:true})));
+app.post('/api/results/:id/revaluation',auth,async(req,res)=>res.json(await Model.Result.findByIdAndUpdate(req.params.id,{revaluation:'Requested',revaluationReason:req.body.reason||''},{new:true})));
+app.patch('/api/results/:id/revaluation/status',auth,roles('admin','faculty'),async(req,res)=>res.json(await Model.Result.findByIdAndUpdate(req.params.id,{revaluation:req.body.status},{new:true})));
+app.post('/api/results/calculate',auth,async(req,res)=>{const {marks,maxMarks=100}=req.body;const pct=Number(marks)/Number(maxMarks)*100;let grade='F',point=0;if(pct>=90){grade='A+';point=10}else if(pct>=80){grade='A';point=9}else if(pct>=70){grade='B+';point=8}else if(pct>=60){grade='B';point=7}else if(pct>=50){grade='C';point=6}else if(pct>=40){grade='D';point=5}res.json({percentage:Number(pct.toFixed(2)),grade,gradePoint:point})});
+app.get('/api/students/:id/attendance',auth,async(req,res)=>res.json(await Model.Attendance.find({student:req.params.id}).sort({date:-1})));
+app.get('/api/students/:id/results',auth,async(req,res)=>res.json(await Model.Result.find({student:req.params.id,published:true}).populate('exam').sort({createdAt:-1})));
+app.get('/api/students/:id/documents',auth,async(req,res)=>res.json(await Model.Document.find({student:req.params.id})));
+app.get('/api/dashboard',auth,async(_,res)=>{const [students,faculty,attendance,exams,results,pendingLeaves,assignments]=await Promise.all([Model.Student.countDocuments(),Model.Faculty.countDocuments(),Model.Attendance.countDocuments(),Model.Exam.countDocuments(),Model.Result.countDocuments(),Model.Leave.countDocuments({status:'Pending'}),Model.Assignment.countDocuments()]);const present=await Model.Attendance.countDocuments({status:'Present'});res.json({students,faculty,attendance,exams,results,pendingLeaves,assignments,presentAttendance:present,attendanceRate:attendance?Math.round(present/attendance*100):0})});
+app.get('/api/reports/attendance',auth,async(_,res)=>res.json(await Model.Attendance.aggregate([{$group:{_id:'$subject',total:{$sum:1},present:{$sum:{$cond:[{$eq:['$status','Present']},1,0]}}}},{$project:{_id:0,subject:'$_id',total:1,present:1,percentage:{$round:[{$multiply:[{$divide:['$present','$total']},100]},1]}}}]));
+app.get('/api/reports/performance',auth,async(_,res)=>res.json(await Model.Result.aggregate([{$group:{_id:'$subject',avgMarks:{$avg:'$marks'},count:{$sum:1}}},{$project:{_id:0,subject:'$_id',avgMarks:{$round:['$avgMarks',1]},count:1}}]));
+app.get('/api/reports/low-attendance',auth,async(_,res)=>{const rows=await Model.Attendance.aggregate([{$group:{_id:'$student',total:{$sum:1},present:{$sum:{$cond:[{$eq:['$status','Present']},1,0]}}}},{$project:{student:'$_id',percentage:{$multiply:[{$divide:['$present','$total']},100]}}},{$match:{percentage:{$lt:75}}}]);res.json(await Model.Student.populate(rows,{path:'student',select:'name registerNo course'}))});
+app.get('/api/reports/class/:course',auth,async(req,res)=>{const students=await Model.Student.find({course:req.params.course});const ids=students.map(s=>s._id);res.json({course:req.params.course,students:students.length,results:await Model.Result.countDocuments({student:{$in:ids}}),attendance:await Model.Attendance.countDocuments({student:{$in:ids}})})});
+async function seed(){if(!await Model.User.findOne({email:'admin@ocms.com'}))await Model.User.create({name:'OCMS Administrator',email:'admin@ocms.com',password:await bcrypt.hash('admin123',12),role:'admin'})}
+const port=process.env.PORT||5000;mongoose.connect(process.env.MONGO_URI||'mongodb://127.0.0.1:27017/ocms').then(async()=>{await seed();app.listen(port,()=>console.log(`OCMS API running on ${port}`))}).catch(e=>{console.error('MongoDB connection failed:',e.message);process.exit(1)});
