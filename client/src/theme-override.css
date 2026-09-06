@@ -1,4 +1,4 @@
-/* OCMS unified light workspace theme */
+/* OCMS unified theme overrides */
 .app aside{background:#ffffff;color:#526078;border-right:1px solid #e5e9f0;box-shadow:4px 0 18px rgba(23,32,51,.04)}
 .brand{color:#172033}
 .brand span{color:#315efb}
@@ -15,3 +15,69 @@
 .signout{background:#f0f3f8;color:#47566d}
 .signout:hover{background:#e4e9f0}
 .mobile-close{color:#647188}
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:86px;padding:8px 11px;border:1px solid #dfe5ed;border-radius:9px;background:#fff;color:#43516a;font-size:10px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(23,32,51,.04)}
+.theme-toggle:hover{background:#f5f7fb;border-color:#cfd7e4}
+.login-card{position:relative}
+.login-theme{position:absolute;top:18px;right:18px}
+.login-theme .theme-toggle{min-width:76px}
+
+html[data-theme="dark"] body,html[data-theme="dark"] #root{background:#0b1220;color:#e7edf7}
+html[data-theme="dark"] .app{background:#0b1220}
+html[data-theme="dark"] .app aside{background:#111a2b;color:#c7d2e3;border-right-color:#26344a;box-shadow:4px 0 18px rgba(0,0,0,.18)}
+html[data-theme="dark"] .brand{color:#f5f7fb}
+html[data-theme="dark"] .brand span{color:#7f9aff}
+html[data-theme="dark"] .portal{border-color:#26344a;background:#172236}
+html[data-theme="dark"] .portal b{color:#f5f7fb}
+html[data-theme="dark"] .portal small{color:#93a2b8}
+html[data-theme="dark"] .side-label{color:#71819a}
+html[data-theme="dark"] .app aside nav button{color:#aab8cb}
+html[data-theme="dark"] .app aside nav button:hover{background:#1b2940;color:#fff}
+html[data-theme="dark"] .app aside nav button.active{background:#243452;color:#8fa7ff;box-shadow:inset 3px 0 #6f8dff}
+html[data-theme="dark"] .side-footer{border-top-color:#26344a}
+html[data-theme="dark"] .account b{color:#f5f7fb}
+html[data-theme="dark"] .account small{color:#93a2b8}
+html[data-theme="dark"] .signout{background:#1b2940;color:#e5ebf5}
+html[data-theme="dark"] .signout:hover{background:#263650}
+html[data-theme="dark"] .mobile-close{color:#aab8cb}
+html[data-theme="dark"] header{background:rgba(17,26,43,.94);border-bottom-color:#26344a}
+html[data-theme="dark"] header h1{color:#f5f7fb}
+html[data-theme="dark"] .kicker{color:#8291a8}
+html[data-theme="dark"] .role-pill,html[data-theme="dark"] .pill{background:#1d2b47;color:#8fa7ff}
+html[data-theme="dark"] .header-logout{background:#1b2940;color:#c7d2e3}
+html[data-theme="dark"] .theme-toggle{background:#172236;border-color:#33435b;color:#e7edf7}
+html[data-theme="dark"] .theme-toggle:hover{background:#21304a;border-color:#465875}
+html[data-theme="dark"] .hero h2,html[data-theme="dark"] .panel h3,html[data-theme="dark"] .quick b,html[data-theme="dark"] .empty h3{color:#f5f7fb}
+html[data-theme="dark"] .hero p,html[data-theme="dark"] .panel-title small,html[data-theme="dark"] .stat small,html[data-theme="dark"] .quick small,html[data-theme="dark"] .empty,html[data-theme="dark"] .leave small{color:#91a0b6}
+html[data-theme="dark"] .panel,html[data-theme="dark"] .stat,html[data-theme="dark"] .notice-card{background:#121d2f;border-color:#273750;color:#e7edf7;box-shadow:0 8px 25px rgba(0,0,0,.12)}
+html[data-theme="dark"] .stat:hover{box-shadow:0 12px 30px rgba(0,0,0,.2)}
+html[data-theme="dark"] .stat-icon,html[data-theme="dark"] .empty-icon{background:#1d2b47;color:#8fa7ff}
+html[data-theme="dark"] .quick button{background:#172236;border-color:#2b3a52;color:#8fa7ff}
+html[data-theme="dark"] .quick button:hover{background:#1d2b47;border-color:#405477}
+html[data-theme="dark"] .status-list>div,html[data-theme="dark"] th,html[data-theme="dark"] td,html[data-theme="dark"] .leave{border-color:#273750}
+html[data-theme="dark"] th{background:#172236;color:#8999b0}
+html[data-theme="dark"] td{color:#cbd5e3}
+html[data-theme="dark"] tr:hover td{background:#172236}
+html[data-theme="dark"] .search{border-color:#33435b;background:#172236;color:#93a2b8}
+html[data-theme="dark"] .search input{color:#e7edf7}
+html[data-theme="dark"] .secondary{background:#25334a;color:#d6dfec}
+html[data-theme="dark"] .secondary:hover{background:#30425d}
+html[data-theme="dark"] .form-grid label{color:#aebbd0}
+html[data-theme="dark"] .form-grid input,html[data-theme="dark"] .form-grid select,html[data-theme="dark"] .form-grid textarea,html[data-theme="dark"] .add-line input{background:#172236;border-color:#33435b;color:#e7edf7}
+html[data-theme="dark"] .modal{background:rgba(3,8,18,.78)}
+html[data-theme="dark"] .modal-card{background:#121d2f;color:#e7edf7;border:1px solid #2b3a52}
+html[data-theme="dark"] .modal-head h3{color:#f5f7fb}
+html[data-theme="dark"] .icon-btn{background:#25334a;color:#c7d2e3}
+html[data-theme="dark"] .notice-card p{color:#91a0b6}
+html[data-theme="dark"] .bar-row>div{background:#26354d}
+html[data-theme="dark"] .login{background:#0b1220}
+html[data-theme="dark"] .login-left{background:#0a1120}
+html[data-theme="dark"] .login-right{background:#0b1220}
+html[data-theme="dark"] .login-card{background:#121d2f;border-color:#2b3a52;color:#e7edf7}
+html[data-theme="dark"] .login-card h2{color:#f5f7fb}
+html[data-theme="dark"] .login-card .muted{color:#91a0b6}
+html[data-theme="dark"] .login-card input{background:#172236;border-color:#33435b;color:#e7edf7}
+html[data-theme="dark"] .role-tabs button{background:#25334a;color:#c7d2e3}
+html[data-theme="dark"] .role-tabs button.active{background:#315efb;color:#fff}
+html[data-theme="dark"] .login-theme .theme-toggle{background:#172236;color:#e7edf7}
+
+@media(max-width:760px){.login-theme{top:12px;right:12px}.header-user .theme-toggle{min-width:72px;padding:8px 8px}.header-user .role-pill{display:none}}
