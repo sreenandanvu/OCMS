@@ -1,0 +1,17 @@
+/* OCMS unified light workspace theme */
+.app aside{background:#ffffff;color:#526078;border-right:1px solid #e5e9f0;box-shadow:4px 0 18px rgba(23,32,51,.04)}
+.brand{color:#172033}
+.brand span{color:#315efb}
+.portal{border-color:#e5e9f0;background:#f7f9fc}
+.portal b{color:#172033}
+.portal small{color:#7d8a9e}
+.side-label{color:#8b97a8}
+.app aside nav button{color:#647188}
+.app aside nav button:hover{background:#f3f6fb;color:#172033}
+.app aside nav button.active{background:#edf1ff;color:#315efb;box-shadow:inset 3px 0 #315efb}
+.side-footer{border-top-color:#e5e9f0}
+.account b{color:#172033}
+.account small{color:#7d8a9e}
+.signout{background:#f0f3f8;color:#47566d}
+.signout:hover{background:#e4e9f0}
+.mobile-close{color:#647188}
