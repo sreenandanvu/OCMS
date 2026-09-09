@@ -1,0 +1,133 @@
+import React,{useEffect,useMemo,useState} from 'react';
+import {AlertTriangle,BarChart3,BookOpen,CalendarDays,CheckCircle2,ClipboardCheck,Clock3,FileText,MessageSquare,Plus,RefreshCw,Search,Users} from 'lucide-react';
+import {QRCodeSVG} from 'qrcode.react';
+
+const API=import.meta.env.VITE_API_URL||'http://localhost:5000/api';
+const token=()=>localStorage.getItem('ocms_token');
+const id=x=>x?._id||x?.id||'';
+async function api(path,opts={}){
+  const res=await fetch(API+path,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{}),...(token()?{Authorization:`Bearer ${token()}`}:{})}});
+  const data=res.status===204?null:await res.json().catch(()=>({message:'Invalid server response'}));
+  if(!res.ok)throw new Error(data?.message||`Request failed (${res.status})`);
+  return data;
+}
+const fmtDate=v=>v?new Date(v).toLocaleDateString():'';
+const errText=e=>e?.message||'Something went wrong';
+function Loading(){return <div className="loading"><RefreshCw className="spin" size={16}/> Loading…</div>}
+function Empty({text='No records found'}){return <div className="empty"><div className="empty-icon"><Search size={18}/></div><h3>{text}</h3><p>There is nothing to display here yet.</p></div>}
+function ErrorBox({error}){return error?<div className="error banner"><AlertTriangle size={15}/>{error}</div>:null}
+function Title({title,sub,action}){return <div className="hero compact"><div><span className="pill">FACULTY</span><h2>{title}</h2><p>{sub}</p></div>{action}</div>}
+function Table({headers,children}){return <div className="table-wrap"><table><thead><tr>{headers.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{children}</tbody></table></div>}
+
+export default function FacultyModule({page}){
+  const [faculty,setFaculty]=useState(null);
+  const [error,setError]=useState('');
+  useEffect(()=>{api('/me/faculty').then(setFaculty).catch(e=>setError(errText(e)))},[]);
+  if(error)return <section className="content"><ErrorBox error={error}/></section>;
+  if(!faculty)return <section className="content"><Loading/></section>;
+  const props={faculty,setError};
+  if(page==='dashboard')return <FacultyDashboard {...props}/>;
+  if(page==='students')return <FacultyStudents {...props}/>;
+  if(page==='attendance')return <FacultyAttendance {...props}/>;
+  if(page==='exams')return <FacultyExams {...props}/>;
+  if(page==='assignments')return <FacultyAssignments {...props}/>;
+  if(page==='timetable')return <FacultyTimetable {...props}/>;
+  if(page==='leaves')return <FacultyLeave {...props}/>;
+  if(page==='communications')return <FacultyCommunication {...props}/>;
+  if(page==='reports')return <FacultyPerformance {...props}/>;
+  return <FacultyDashboard {...props}/>;
+}
+
+function FacultyDashboard({faculty,setError}){
+  const [stats,setStats]=useState(null);
+  useEffect(()=>{api('/dashboard').then(setStats).catch(e=>setError(errText(e)))},[setError]);
+  const cards=[['Students',stats?.students||0,Users],['Attendance records',stats?.attendance||0,ClipboardCheck],['Exams',stats?.exams||0,FileText],['Assignments',stats?.assignments||0,BookOpen]];
+  return <section className="content">
+    <div className="hero"><div><span className="pill">FACULTY PORTAL</span><h2>Welcome, {faculty.name||'Faculty'} 👋</h2><p>{faculty.designation||'Faculty member'} · {faculty.department||'Academic Department'}</p></div></div>
+    <div className="stats">{cards.map(([label,value,I])=><div className="stat static" key={label}><span className="stat-icon"><I/></span><small>{label}</small><strong>{value}</strong><em>Current portal data</em></div>)}</div>
+    <div className="grid2">
+      <div className="panel"><div className="panel-title"><h3>Teaching profile</h3><small>Your assigned academic information</small></div><div className="status-list"><div><Users/><span>Employee ID</span><b>{faculty.employeeId||'—'}</b></div><div><BookOpen/><span>Department</span><b>{faculty.department||'—'}</b></div><div><FileText/><span>Designation</span><b>{faculty.designation||'—'}</b></div><div><CheckCircle2/><span>Subjects</span><b>{faculty.subjects?.length||0}</b></div></div></div>
+      <div className="panel"><div className="panel-title"><h3>Faculty responsibilities</h3><small>Core workflows available to your account</small></div><div className="quick"><div className="stat static"><small>Attendance</small><strong>Mark</strong><em>Manual + QR</em></div><div className="stat static"><small>Exams</small><strong>Manage</strong><em>Marks + grades</em></div><div className="stat static"><small>Assignments</small><strong>Track</strong><em>Submissions</em></div><div className="stat static"><small>Communication</small><strong>Post</strong><em>Student notices</em></div></div></div>
+    </div>
+  </section>;
+}
+
+function FacultyStudents({faculty,setError}){
+  const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[search,setSearch]=useState('');
+  const load=()=>{setLoading(true);api('/students').then(setRows).catch(e=>setError(errText(e))).finally(()=>setLoading(false))};
+  useEffect(load,[faculty,setError]);
+  const subjects=(faculty.subjects||[]).map(String).map(x=>x.toLowerCase());
+  const classes=(faculty.classes||[]).map(String).map(x=>x.toLowerCase());
+  const visible=useMemo(()=>rows.filter(s=>{
+    const q=search.toLowerCase();
+    if(q&&!JSON.stringify(s).toLowerCase().includes(q))return false;
+    if(!subjects.length&&!classes.length)return true;
+    const course=String(s.course||'').toLowerCase();
+    const sub=(s.subjects||[]).map(String).map(x=>x.toLowerCase());
+    return classes.includes(course)||subjects.some(x=>sub.includes(x)||x===course);
+  }),[rows,search,faculty]);
+  return <section className="content"><Title title="My Students" sub="Students connected to your assigned subjects and classes."/><div className="panel"><div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search students…" value={search} onChange={e=>setSearch(e.target.value)}/></div><button className="secondary" onClick={load}><RefreshCw size={15}/> Refresh</button></div>{loading?<Loading/>:visible.length?<Table headers={['Name','Register No','Email','Course','Semester','Status']} >{visible.map(s=><tr key={id(s)}><td><b>{s.name}</b></td><td>{s.registerNo||'—'}</td><td>{s.email||'—'}</td><td>{s.course||'—'}</td><td>{s.semester||'—'}</td><td><span className="status">{s.status||'Active'}</span></td></tr>)}</Table>:<Empty text="No assigned students found"/>}</div></section>;
+}
+
+function FacultyAttendance({faculty,setError}){
+  const [students,setStudents]=useState([]),[records,setRecords]=useState([]),[loading,setLoading]=useState(true),[form,setForm]=useState({student:'',date:new Date().toISOString().slice(0,10),subject:faculty.subjects?.[0]||'',period:1,status:'Present'}),[session,setSession]=useState(null),[busy,setBusy]=useState(false);
+  const load=()=>Promise.all([api('/students'),api('/attendance')]).then(([s,a])=>{setStudents(s);setRecords(a)}).catch(e=>setError(errText(e))).finally(()=>setLoading(false));
+  useEffect(()=>{load()},[]);
+  const mark=async e=>{e.preventDefault();if(!form.student)return setError('Select a student first.');setBusy(true);try{await api('/attendance',{method:'POST',body:JSON.stringify({...form,period:Number(form.period),semester:students.find(s=>id(s)===form.student)?.semester,course:students.find(s=>id(s)===form.student)?.course})});await load()}catch(e){setError(errText(e))}finally{setBusy(false)}};
+  const createSession=async()=>{try{const d=await api('/attendance/session',{method:'POST',body:JSON.stringify({subject:form.subject,course:'',semester:0,period:Number(form.period),expiresInMinutes:15})});setSession(d)}catch(e){setError(errText(e))}};
+  const recent=records.filter(r=>r.markedBy===id(faculty.user)||r.subject&&faculty.subjects?.map(String).includes(String(r.subject))).slice(-20).reverse();
+  return <section className="content"><Title title="Attendance" sub="Mark attendance manually or open a QR check-in session." action={<button className="primary" onClick={createSession}><ClipboardCheck size={16}/> Create QR session</button>}/><div className="grid2"><div className="panel"><div className="panel-title"><h3>Manual attendance</h3><small>Record a student's attendance for your class.</small></div><form onSubmit={mark}><div className="form-grid"><label>Student<select value={form.student} onChange={e=>setForm({...form,student:e.target.value})}><option value="">Select student</option>{students.map(s=><option key={id(s)} value={id(s)}>{s.name} · {s.registerNo||s.email}</option>)}</select></label><label>Date<input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></label><label>Subject<input value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})}/></label><label>Period<input type="number" min="1" value={form.period} onChange={e=>setForm({...form,period:e.target.value})}/></label><label>Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option>Present</option><option>Absent</option><option>Late</option><option>Excused</option></select></label></div><div className="actions"><button className="primary" disabled={busy}><CheckCircle2 size={15}/>{busy?'Saving…':'Mark attendance'}</button></div></form></div><div className="panel">{session?<><div className="panel-title"><h3>Active QR session</h3><small>Students can scan this code to check in.</small></div><div style={{display:'grid',placeItems:'center',gap:12,padding:15}}><QRCodeSVG value={session.code||session.sessionCode||JSON.stringify(session)} size={210}/><b>{session.code||session.sessionCode}</b><small>Session expires automatically.</small></div></>:<><div className="panel-title"><h3>QR attendance</h3><small>Generate a short-lived session for a class.</small></div><div className="empty"><div className="empty-icon"><ClipboardCheck size={18}/></div><h3>No active session</h3><p>Use “Create QR session” to start.</p></div></>}</div></div><div className="panel"><div className="panel-title"><h3>Recent records</h3><small>Latest attendance activity available to this faculty account.</small></div>{loading?<Loading/>:recent.length?<Table headers={['Date','Student','Subject','Period','Status']}>{recent.map(r=><tr key={id(r)}><td>{fmtDate(r.date)}</td><td>{r.student?.name||r.student?.registerNo||r.student||'—'}</td><td>{r.subject||'—'}</td><td>{r.period||'—'}</td><td><span className={'status '+(r.status==='Present'?'Approved':r.status==='Absent'?'Rejected':'Pending')}>{r.status}</span></td></tr>)}</Table>:<Empty text="No attendance records"/>}</div></section>;
+}
+
+function FacultyExams({faculty,setError}){
+  const [exams,setExams]=useState([]),[results,setResults]=useState([]),[loading,setLoading]=useState(true),[editing,setEditing]=useState(null),[busy,setBusy]=useState(false);
+  const load=()=>Promise.all([api('/exams'),api('/results')]).then(([e,r])=>{setExams(e);setResults(r)}).catch(e=>setError(errText(e))).finally(()=>setLoading(false));
+  useEffect(load,[]);
+  const allowed=(faculty.subjects||[]).map(String).map(x=>x.toLowerCase());
+  const visible=exams.filter(e=>!allowed.length||(e.subjects||[]).some(s=>allowed.includes(String(s).toLowerCase())));
+  const save=async e=>{e.preventDefault();setBusy(true);try{const marks=Math.max(0,Number(editing.marks||0));const max=Math.max(1,Number(editing.maxMarks||100));const p=marks/max;const grade=p>=.9?'A+':p>=.8?'A':p>=.7?'B+':p>=.6?'B':p>=.5?'C':p>=.4?'D':'F';const gp=p>=.9?10:p>=.8?9:p>=.7?8:p>=.6?7:p>=.5?6:p>=.4?5:0;await api('/results/'+id(editing),{method:'PUT',body:JSON.stringify({...editing,marks,maxMarks:max,grade,gradePoint:gp})});setEditing(null);await load()}catch(e){setError(errText(e))}finally{setBusy(false)}};
+  return <section className="content"><Title title="Exams & Marks" sub="View examination schedules and enter or update marks for your subjects."/><div className="panel"><div className="panel-title"><h3>Examination schedule</h3><small>Schedules relevant to your assigned subjects.</small></div>{loading?<Loading/>:visible.length?<Table headers={['Exam','Course','Semester','Date','Time','Room','Status']} >{visible.map(e=><tr key={id(e)}><td><b>{e.name}</b></td><td>{e.course||'—'}</td><td>{e.semester||'—'}</td><td>{fmtDate(e.date)}</td><td>{e.startTime||'—'} – {e.endTime||'—'}</td><td>{e.room||'—'}</td><td><span className="status">{e.published?'Published':'Scheduled'}</span></td></tr>)}</Table>:<Empty text="No assigned examinations"/>}</div><div className="panel"><div className="panel-title"><h3>Result entry</h3><small>Only results associated with your assigned subjects are shown.</small></div>{results.filter(r=>!allowed.length||allowed.includes(String(r.subject||'').toLowerCase())).length?<Table headers={['Student','Subject','Internal','Marks','Grade','Action']}>{results.filter(r=>!allowed.length||allowed.includes(String(r.subject||'').toLowerCase())).map(r=><tr key={id(r)}><td>{r.student?.name||r.student||'—'}</td><td>{r.subject||'—'}</td><td>{r.internal??'—'}</td><td>{r.marks??0}/{r.maxMarks||100}</td><td><span className="status">{r.grade||'—'}</span></td><td><button className="icon-btn" onClick={()=>setEditing({...r})}>Edit</button></td></tr>)}</Table>:<Empty text="No results available"/>}</div>{editing&&<div className="modal"><div className="modal-card"><div className="modal-head"><h3>Update result</h3><button className="icon-btn" onClick={()=>setEditing(null)}>×</button></div><form onSubmit={save}><div className="form-grid"><label>Student<input disabled value={editing.student?.name||editing.student||''}/></label><label>Subject<input disabled value={editing.subject||''}/></label><label>Internal<input type="number" value={editing.internal??0} onChange={e=>setEditing({...editing,internal:Number(e.target.value)})}/></label><label>Marks<input type="number" min="0" value={editing.marks??0} onChange={e=>setEditing({...editing,marks:Number(e.target.value)})}/></label><label>Maximum Marks<input type="number" min="1" value={editing.maxMarks??100} onChange={e=>setEditing({...editing,maxMarks:Number(e.target.value)})}/></label></div><div className="actions"><button type="button" className="secondary" onClick={()=>setEditing(null)}>Cancel</button><button className="primary" disabled={busy}>{busy?'Saving…':'Save marks'}</button></div></form></div></div>}</section>;
+}
+
+function FacultyAssignments({faculty,setError}){
+  const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[editing,setEditing]=useState(null),[form,setForm]=useState({title:'',description:'',subject:faculty.subjects?.[0]||'',dueDate:'',resourceUrl:''});
+  const load=()=>{setLoading(true);api('/assignments').then(setRows).catch(e=>setError(errText(e))).finally(()=>setLoading(false))};
+  useEffect(load,[]);
+  const mine=rows.filter(a=>!a.faculty||id(a.faculty)===id(faculty.user)||String(a.faculty)===String(faculty.user));
+  const save=async e=>{e.preventDefault();try{await api('/assignments'+(editing?'/'+id(editing):''),{method:editing?'PUT':'POST',body:JSON.stringify({...form,faculty:id(faculty.user)})});setEditing(null);setForm({title:'',description:'',subject:faculty.subjects?.[0]||'',dueDate:'',resourceUrl:''});load()}catch(e){setError(errText(e))}};
+  const grade=async(a,s)=>{const marks=prompt('Marks',s.marks??'');if(marks===null)return;const feedback=prompt('Feedback',s.feedback||'')??s.feedback;try{const submissions=(a.submissions||[]).map(x=>id(x.student)===id(s.student)?{...x,marks:Number(marks),feedback}:x);await api('/assignments/'+id(a),{method:'PUT',body:JSON.stringify({...a,submissions})});load()}catch(e){setError(errText(e))}};
+  return <section className="content"><Title title="Assignments" sub="Create assignments, review submissions and provide marks and feedback." action={<button className="primary" onClick={()=>setEditing({})}><Plus size={16}/> New assignment</button>}/><div className="panel">{loading?<Loading/>:mine.length?mine.map(a=><div className="leave" key={id(a)}><div><b>{a.title}</b><small>{a.subject||'—'} · Due {fmtDate(a.dueDate)} · {(a.submissions||[]).length} submission(s)</small>{(a.submissions||[]).length>0&&(a.submissions||[]).map(s=><small key={id(s.student)}>↳ {s.student?.name||s.student||'Student'} · {s.marks??'Not graded'} <button className="mini" onClick={()=>grade(a,s)}>Grade</button></small>)}</div><button className="icon-btn" onClick={()=>{setEditing(a);setForm({title:a.title||'',description:a.description||'',subject:a.subject||'',dueDate:a.dueDate?a.dueDate.slice(0,10):'',resourceUrl:a.resourceUrl||''})}}>Edit</button></div>):<Empty text="No assignments created by you"/>}</div>{editing&&<div className="modal"><div className="modal-card"><div className="modal-head"><h3>{id(editing)?'Edit assignment':'Create assignment'}</h3><button className="icon-btn" onClick={()=>setEditing(null)}>×</button></div><form onSubmit={save}><div className="form-grid"><label>Title<input required value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label><label>Subject<input required value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})}/></label><label>Due Date<input required type="date" value={form.dueDate} onChange={e=>setForm({...form,dueDate:e.target.value})}/></label><label>Resource URL<input value={form.resourceUrl} onChange={e=>setForm({...form,resourceUrl:e.target.value})}/></label><label className="full">Description<textarea required value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label></div><div className="actions"><button type="button" className="secondary" onClick={()=>setEditing(null)}>Cancel</button><button className="primary">Save assignment</button></div></form></div></div>}</section>;
+}
+
+function FacultyTimetable({faculty,setError}){
+  const [rows,setRows]=useState([]),[loading,setLoading]=useState(true);
+  useEffect(()=>{api('/timetable').then(setRows).catch(e=>setError(errText(e))).finally(()=>setLoading(false))},[]);
+  const allowedSubjects=(faculty.subjects||[]).map(String).map(x=>x.toLowerCase());
+  const allowedClasses=(faculty.classes||[]).map(String).map(x=>x.toLowerCase());
+  const mine=rows.filter(t=>id(t.faculty)===id(faculty.user)||String(t.faculty)===String(faculty.user)||allowedSubjects.includes(String(t.subject||'').toLowerCase())||allowedClasses.includes(String(t.course||'').toLowerCase()));
+  return <section className="content"><Title title="My Timetable" sub="Your teaching schedule by day, period, subject and room."/><div className="panel">{loading?<Loading/>:mine.length?<Table headers={['Day','Period','Time','Subject','Course','Semester','Room']}>{mine.map(t=><tr key={id(t)}><td>{t.day||'—'}</td><td>{t.period||'—'}</td><td>{t.startTime||'—'} – {t.endTime||'—'}</td><td><b>{t.subject||'—'}</b></td><td>{t.course||'—'}</td><td>{t.semester||'—'}</td><td>{t.room||'—'}</td></tr>)}</Table>:<Empty text="No timetable entries found"/>}</div></section>;
+}
+
+function FacultyLeave({faculty,setError}){
+  const [rows,setRows]=useState([]),[form,setForm]=useState({from:'',to:'',reason:''}),[busy,setBusy]=useState(false);
+  const load=()=>api('/leaves').then(setRows).catch(e=>setError(errText(e)));
+  useEffect(load,[]);
+  const submit=async e=>{e.preventDefault();setBusy(true);try{await api('/leaves',{method:'POST',body:JSON.stringify({...form,faculty:id(faculty.user),applicant:id(faculty.user)})});setForm({from:'',to:'',reason:''});load()}catch(e){setError(errText(e))}finally{setBusy(false)}};
+  const mine=rows.filter(x=>id(x.faculty)===id(faculty.user)||id(x.applicant)===id(faculty.user)||String(x.faculty)===String(faculty.user));
+  return <section className="content"><Title title="My Leave" sub="Submit leave requests and track their approval status."/><div className="grid2"><div className="panel"><div className="panel-title"><h3>Apply for leave</h3><small>Submit a request to administration.</small></div><form onSubmit={submit}><div className="form-grid"><label>From<input required type="date" value={form.from} onChange={e=>setForm({...form,from:e.target.value})}/></label><label>To<input required type="date" value={form.to} onChange={e=>setForm({...form,to:e.target.value})}/></label><label className="full">Reason<textarea required value={form.reason} onChange={e=>setForm({...form,reason:e.target.value})}/></label></div><div className="actions"><button className="primary" disabled={busy}>{busy?'Submitting…':'Submit leave'}</button></div></form></div><div className="panel"><div className="panel-title"><h3>Request history</h3><small>Your submitted leave applications.</small></div>{mine.length?mine.slice().reverse().map(l=><div className="leave" key={id(l)}><div><b>{fmtDate(l.from)} – {fmtDate(l.to)}</b><small>{l.reason}</small></div><span className={'status '+l.status}>{l.status||'Pending'}</span></div>):<Empty text="No leave requests"/>}</div></div></section>;
+}
+
+function FacultyCommunication({faculty,setError}){
+  const [rows,setRows]=useState([]),[form,setForm]=useState({title:'',message:'',audience:'students'}),[busy,setBusy]=useState(false);
+  const load=()=>api('/communications').then(setRows).catch(e=>setError(errText(e)));
+  useEffect(load,[]);
+  const post=async e=>{e.preventDefault();setBusy(true);try{await api('/communications',{method:'POST',body:JSON.stringify({...form,author:id(faculty.user)})});setForm({title:'',message:'',audience:'students'});load()}catch(e){setError(errText(e))}finally{setBusy(false)}};
+  return <section className="content"><Title title="Communication" sub="Publish academic notices and messages for your students."/><div className="grid2"><div className="panel"><div className="panel-title"><h3>New notice</h3><small>Keep students informed about classes and academic activities.</small></div><form onSubmit={post}><div className="form-grid"><label>Title<input required value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label><label>Audience<select value={form.audience} onChange={e=>setForm({...form,audience:e.target.value})}><option value="students">Students</option><option value="faculty">Faculty</option><option value="all">Everyone</option></select></label><label className="full">Message<textarea required value={form.message} onChange={e=>setForm({...form,message:e.target.value})}/></label></div><div className="actions"><button className="primary" disabled={busy}><MessageSquare size={15}/>{busy?'Publishing…':'Publish notice'}</button></div></form></div><div className="panel"><div className="panel-title"><h3>Recent notices</h3><small>Messages visible in the communication feed.</small></div>{rows.slice().reverse().slice(0,8).map(r=><div className="leave" key={id(r)}><div><b>{r.title}</b><small>{r.message}</small></div><span className="status">{r.audience||'all'}</span></div>)}{!rows.length&&<Empty text="No notices yet"/>}</div></div></section>;
+}
+
+function FacultyPerformance({faculty,setError}){
+  const [attendance,setAttendance]=useState([]),[performance,setPerformance]=useState([]),[low,setLow]=useState([]),[loading,setLoading]=useState(true);
+  useEffect(()=>{Promise.all([api('/reports/attendance'),api('/reports/performance'),api('/reports/low-attendance')]).then(([a,p,l])=>{setAttendance(a);setPerformance(p);setLow(l)}).catch(e=>setError(errText(e))).finally(()=>setLoading(false))},[]);
+  const avg=attendance.length?Math.round(attendance.reduce((n,x)=>n+Number(x.percentage??x.attendanceRate??0),0)/attendance.length):0;
+  return <section className="content"><Title title="Performance" sub="Attendance and academic performance insights for your teaching area."/>{loading?<div className="panel"><Loading/></div>:<><div className="stats"><div className="stat static"><span className="stat-icon"><BarChart3/></span><small>Average attendance</small><strong>{avg}%</strong><em>Across returned records</em></div><div className="stat static"><span className="stat-icon"><Users/></span><small>Attendance rows</small><strong>{attendance.length}</strong><em>Report records</em></div><div className="stat static"><span className="stat-icon"><FileText/></span><small>Performance rows</small><strong>{performance.length}</strong><em>Academic records</em></div><div className="stat static"><span className="stat-icon"><AlertTriangle/></span><small>Low attendance</small><strong>{low.length}</strong><em>Needs attention</em></div></div><div className="grid2"><div className="panel"><div className="panel-title"><h3>Performance report</h3><small>Student-level academic indicators.</small></div>{performance.length?<Table headers={['Student','Subject','Marks','Grade','Grade Point']}>{performance.slice(0,50).map((r,i)=><tr key={id(r)||i}><td>{r.student?.name||r.student||'—'}</td><td>{r.subject||'—'}</td><td>{r.marks??'—'}</td><td>{r.grade||'—'}</td><td>{r.gradePoint??'—'}</td></tr>)}</Table>:<Empty text="No performance data"/>}</div><div className="panel"><div className="panel-title"><h3>Low attendance</h3><small>Students requiring follow-up.</small></div>{low.length?<Table headers={['Student','Course','Attendance']} >{low.slice(0,50).map((r,i)=><tr key={id(r)||i}><td>{r.student?.name||r.student||'—'}</td><td>{r.course||'—'}</td><td><span className="status Rejected">{r.percentage??r.attendanceRate??0}%</span></td></tr>)}</Table>:<Empty text="No low-attendance students"/>}</div></div></>}</section>;
+}
