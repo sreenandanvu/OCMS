@@ -175,9 +175,12 @@ crud('faculty', 'Faculty', { writeRoles: ['admin'] });
 crud('attendance', 'Attendance', { populate: 'student', writeRoles: ['admin', 'faculty'] });
 crud('exams', 'Exam', { writeRoles: ['admin', 'faculty'] });
 crud('results', 'Result', { populate: ['student', 'exam'], writeRoles: ['admin', 'faculty'] });
+app.get('/api/assignments', auth, roles('admin', 'faculty', 'student'), async (_, res) => res.json(await Model.Assignment.find().populate('faculty').sort({ dueDate: 1 })));
 crud('assignments', 'Assignment', { populate: 'faculty', writeRoles: ['admin', 'faculty'] });
 crud('leaves', 'Leave', { populate: ['student', 'faculty'], writeRoles: ['admin', 'student', 'faculty'] });
+app.get('/api/timetable', auth, roles('admin', 'faculty', 'student'), async (_, res) => res.json(await Model.Timetable.find().sort({ day: 1, period: 1 })));
 crud('timetable', 'Timetable', { writeRoles: ['admin', 'faculty'] });
+app.get('/api/communications', auth, roles('admin', 'faculty', 'student'), async (_, res) => res.json(await Model.Communication.find().populate('author', 'name email role').sort({ createdAt: -1 })));
 crud('communications', 'Communication', { populate: 'author', owner: 'author', writeRoles: ['admin', 'faculty'] });
 crud('documents', 'Document', { populate: 'student', writeRoles: ['admin', 'student'] });
 
@@ -243,6 +246,9 @@ app.get('/api/me/student/assignments', auth, roles('student'), async (req, res) 
 app.get('/api/me/student/leaves', auth, roles('student'), async (req, res) => { const s = await Model.Student.findOne({ $or: [{ user: req.user.id }, { email: req.user.email }] }); res.json(s ? await Model.Leave.find({ student: s._id }).sort({ createdAt: -1 }) : []); });
 app.get('/api/me/faculty/assignments', auth, roles('faculty'), async (req, res) => { const f = await Model.Faculty.findOne({ $or: [{ user: req.user.id }, { email: req.user.email }] }); res.json(f ? await Model.Assignment.find({ faculty: f._id }).sort({ dueDate: 1 }) : []); });
 
+app.get('/api/me/student/documents', auth, roles('student'), async (req, res) => { const s = await Model.Student.findOne({ $or: [{ user: req.user.id }, { email: req.user.email }] }); res.json(s ? await Model.Document.find({ student: s._id }).sort({ createdAt: -1 }) : []); });
+app.get('/api/me/student/attendance', auth, roles('student'), async (req, res) => { const s = await Model.Student.findOne({ $or: [{ user: req.user.id }, { email: req.user.email }] }); res.json(s ? await Model.Attendance.find({ student: s._id }).sort({ date: -1 }) : []); });
+app.get('/api/me/student/results', auth, roles('student'), async (req, res) => { const s = await Model.Student.findOne({ $or: [{ user: req.user.id }, { email: req.user.email }] }); res.json(s ? await Model.Result.find({ student: s._id, published: true }).populate('exam').sort({ createdAt: -1 }) : []); });
 app.get('/api/dashboard', auth, async (req, res) => {
   if (req.user.role === 'student') {
     const s = await Model.Student.findOne({ $or: [{ user: req.user.id }, { email: req.user.email }] });
@@ -264,7 +270,7 @@ app.get('/api/reports/attendance', auth, roles('admin', 'faculty'), async (_, re
   { $group: { _id: '$subject', total: { $sum: 1 }, present: { $sum: { $cond: [{ $eq: ['$status', 'Present'] }, 1, 0] } } } },
   { $project: { _id: 0, subject: '$_id', total: 1, present: 1, percentage: { $round: [{ $multiply: [{ $divide: ['$present', '$total'] }, 100] }, 1] } } }
 ])));
-app.get('/api/reports/performance', auth, roles('admin', 'faculty'), async (_, res) => res.json(await Model.Result.aggregate([{ $group: { _id: '$subject', avgMarks: { $avg: '$marks' }, count: { $sum: 1 } } }, { $project: { _id: 0, subject: '$_id', avgMarks: { $round: ['$avgMarks', 1] }, count: 1 } }]));
+app.get('/api/reports/performance', auth, roles('admin', 'faculty'), async (_, res) => res.json(await Model.Result.aggregate([{ $group: { _id: '$subject', avgMarks: { $avg: '$marks' }, count: { $sum: 1 } } }, { $project: { _id: 0, subject: '$_id', avgMarks: { $round: ['$avgMarks', 1] }, count: 1 } }])));
 app.get('/api/reports/low-attendance', auth, roles('admin', 'faculty'), async (_, res) => { const rows = await Model.Attendance.aggregate([{ $group: { _id: '$student', total: { $sum: 1 }, present: { $sum: { $cond: [{ $eq: ['$status', 'Present'] }, 1, 0] } } } }, { $project: { student: '$_id', percentage: { $multiply: [{ $divide: ['$present', '$total'] }, 100] } } }, { $match: { percentage: { $lt: 75 } } }]); res.json(await Model.Student.populate(rows, { path: 'student', select: 'name registerNo course semester' })); });
 app.get('/api/reports/class/:course', auth, roles('admin', 'faculty'), async (req, res) => { const students = await Model.Student.find({ course: req.params.course }); const ids = students.map(s => s._id); res.json({ course: req.params.course, students: students.length, results: await Model.Result.countDocuments({ student: { $in: ids } }), attendance: await Model.Attendance.countDocuments({ student: { $in: ids } }) }); });
 app.post('/api/reports/custom', auth, roles('admin'), async (req, res) => {
@@ -280,5 +286,49 @@ app.post('/api/reports/custom', auth, roles('admin'), async (req, res) => {
 async function seed() {
   if (!await Model.User.findOne({ email: 'admin@ocms.com' })) await Model.User.create({ name: 'OCMS Administrator', email: 'admin@ocms.com', password: await bcrypt.hash('admin123', 12), role: 'admin' });
 }
+app.post('/api/admin/students', auth, roles('admin'), async (req, res) => {
+  try {
+    const { name, email, password, registerNo, phone, dob, address, course, semester, status } = req.body;
+    if (!name || !email || !password || !registerNo || !course || !semester) return res.status(400).json({ message: 'Name, email, password, register number, course and semester are required' });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (await Model.User.findOne({ email: normalizedEmail })) return res.status(409).json({ message: 'Email already registered' });
+    if (await Model.Student.findOne({ registerNo })) return res.status(409).json({ message: 'Register number already exists' });
+    const user = await Model.User.create({ name, email: normalizedEmail, password: await bcrypt.hash(password, 12), role: 'student' });
+    try {
+      const student = await Model.Student.create({ user: user._id, name, registerNo, email: normalizedEmail, phone, dob, address, course, semester: Number(semester), status: status || 'Active' });
+      return res.status(201).json({ user: publicUser(user), student });
+    } catch (error) {
+      await Model.User.findByIdAndDelete(user._id);
+      throw error;
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.post('/api/admin/faculty', auth, roles('admin'), async (req, res) => {
+  try {
+    const { name, email, password, employeeId, phone, department, designation } = req.body;
+    if (!name || !email || !password || !employeeId) return res.status(400).json({ message: 'Name, email, password and employee ID are required' });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (await Model.User.findOne({ email: normalizedEmail })) return res.status(409).json({ message: 'Email already registered' });
+    if (await Model.Faculty.findOne({ employeeId })) return res.status(409).json({ message: 'Employee ID already exists' });
+    const user = await Model.User.create({ name, email: normalizedEmail, password: await bcrypt.hash(password, 12), role: 'faculty' });
+    try {
+      const faculty = await Model.Faculty.create({ user: user._id, name, employeeId, email: normalizedEmail, phone, department, designation });
+      return res.status(201).json({ user: publicUser(user), faculty });
+    } catch (error) {
+      await Model.User.findByIdAndDelete(user._id);
+      throw error;
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.get('/api/admin/users', auth, roles('admin'), async (_, res) => {
+  res.json(await Model.User.find().select('-password').sort({ createdAt: -1 }));
+});
+
 const port = process.env.PORT || 5000;
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ocms').then(async () => { await seed(); app.listen(port, () => console.log(`OCMS API running on ${port}`)); }).catch(e => { console.error('MongoDB connection failed:', e.message); process.exit(1); });

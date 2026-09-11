@@ -1,9 +1,388 @@
 /* OCMS LOGIN — NEO-BRUTALIST */
-.login-redesign{font-family:'Space Grotesk',sans-serif;min-height:100vh;height:100vh;display:grid;grid-template-columns:1.25fr .75fr;background:#f4efe5;color:#111;overflow:hidden}
-.login-redesign .login-showcase{display:flex!important;flex-direction:column;justify-content:space-between;background:#ffd447;border-right:3px solid #111;padding:34px 5vw 30px;position:relative;overflow:hidden}.login-redesign .login-showcase:before{content:'01';position:absolute;right:5%;top:5%;font:900 clamp(120px,18vw,280px)/.8 'Space Grotesk';opacity:.12}.login-redesign .login-showcase:after{content:'';position:absolute;width:180px;height:180px;background:#6ca9ff;border:3px solid #111;right:9%;bottom:12%;transform:rotate(12deg);box-shadow:8px 8px 0 #111}
-.brand-lockup{display:flex;align-items:center;gap:10px;font-weight:700;font-size:25px;line-height:.8;letter-spacing:-.07em;z-index:2}.brand-o{display:grid;place-items:center;width:43px;height:43px;border:3px solid #111;background:#ff78b7;box-shadow:4px 4px 0 #111;font-size:22px}.brand-lockup small{display:block;font:7px 'DM Mono',monospace;letter-spacing:.03em;margin-top:8px}
-.showcase-copy{max-width:900px;z-index:2}.showcase-kicker{display:inline-block;border:3px solid #111;background:#fffdf8;padding:7px 10px;font:9px 'DM Mono',monospace;box-shadow:4px 4px 0 #111}.showcase-copy h1{font-size:clamp(52px,7vw,104px);line-height:.82;letter-spacing:-.085em;margin:22px 0}.showcase-copy h1 span{color:#fffdf8;text-shadow:3px 3px 0 #111}.showcase-copy>p{font-size:14px;line-height:1.6;max-width:680px;margin-bottom:25px}.feature-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:760px}.feature{border:3px solid #111;background:#fffdf8;padding:13px;box-shadow:5px 5px 0 #111}.feature:nth-child(2){background:#b9ee59}.feature:nth-child(3){background:#ff78b7}.feature-icon{font-size:20px;margin-bottom:13px}.feature b,.feature small{display:block}.feature b{font-size:11px}.feature small{font:7px/1.5 'DM Mono',monospace;margin-top:4px}.campus-art{height:70px}.quote{font:8px/1.5 'DM Mono',monospace;max-width:500px;z-index:2}.quote b{font-family:'Space Grotesk',sans-serif;font-size:10px}
-.login-redesign .login-panel{position:relative;display:grid;place-items:center;padding:40px;background:#f4efe5;overflow:auto}.login-redesign .theme-button{position:absolute;right:25px;top:22px;padding:8px 11px;border:3px solid #111;background:#fffdf8;color:#111;font:9px 'DM Mono',monospace;box-shadow:3px 3px 0 #111}.login-redesign .login-card-redesign{width:min(440px,100%);background:#fffdf8;border:3px solid #111;border-radius:0;padding:30px;box-shadow:9px 9px 0 #111}.login-redesign .card-logo{text-align:left;color:#111;font-weight:700;font-size:29px;letter-spacing:-.07em}.login-redesign .card-logo span{display:inline-block;background:#6ca9ff;border:2px solid #111;padding:1px 5px;margin-right:4px}.login-redesign .card-sub{font:7px 'DM Mono',monospace;letter-spacing:.12em;margin-top:7px;color:#625d54}.login-redesign .login-card-redesign h2{font-size:31px;letter-spacing:-.06em;margin:25px 0 4px}.login-redesign .card-description{font:9px 'DM Mono',monospace;color:#625d54;margin:0 0 17px}.login-redesign .role-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.login-redesign .role-tabs button{padding:10px 5px;border:3px solid #111;background:#f4efe5;color:#111;font-size:9px;font-weight:700;box-shadow:3px 3px 0 #111}.login-redesign .role-tabs button.active{background:#111;color:#fff}.login-redesign form{display:grid;gap:11px;margin-top:17px}.login-redesign .input-wrap{display:flex;align-items:center;border:3px solid #111;background:#fffdf8;box-shadow:3px 3px 0 #111}.login-redesign .input-wrap span{width:34px;text-align:center;font-size:12px}.login-redesign input{width:100%;height:43px;border:0!important;background:transparent;padding:0 10px;color:#111;outline:0;font-size:10px;box-shadow:none!important}.login-redesign input:focus{background:#fff8c9}.login-redesign .login-submit{height:45px;border:3px solid #111;border-radius:0;background:#6ca9ff;color:#111;font-size:10px;font-weight:700;box-shadow:5px 5px 0 #111}.login-redesign .login-submit:hover{transform:translate(3px,3px);box-shadow:2px 2px 0 #111}.login-redesign .demo-note{margin-top:12px;padding:9px;border:2px dashed #111;background:#ffd447;font:8px 'DM Mono',monospace}.login-redesign .account-link{width:100%;margin-top:13px;padding:10px;border:3px solid #111;background:#ff78b7;color:#111;font-size:9px;font-weight:700;box-shadow:3px 3px 0 #111}.login-redesign .login-error{display:flex;gap:6px;align-items:center;padding:9px;border:3px solid #111;background:#ff6262;color:#111;font:8px 'DM Mono',monospace}.login-redesign .form-row{display:flex;justify-content:space-between;align-items:center;font:8px 'DM Mono',monospace}.login-redesign .remember{display:flex;align-items:center;gap:5px}.login-redesign .remember input{width:14px;height:14px}.login-redesign .forgot{background:transparent;color:#111;text-decoration:underline;font:8px 'DM Mono',monospace}.login-footer{position:absolute;bottom:14px;left:30px;right:30px;display:flex;justify-content:space-between;font:7px 'DM Mono',monospace;color:#625d54}
-html[data-theme='dark'] .login-redesign{background:#171717;color:#fff}.login-redesign html[data-theme='dark'] .login-panel{background:#171717}.login-redesign .login-panel{background:#f4efe5}.login-redesign .login-card-redesign{color:#111}
-@media(max-width:900px){.login-redesign{grid-template-columns:1fr}.login-redesign .login-showcase{display:none!important}.login-redesign .login-panel{min-height:100vh}.login-footer{display:none}}
-@media(max-width:520px){.login-redesign .login-panel{padding:20px}.login-redesign .login-card-redesign{padding:22px 18px}.login-redesign .role-tabs{grid-template-columns:1fr}.login-redesign .theme-button{right:15px;top:14px}.login-redesign .login-card-redesign h2{font-size:27px}}
+.login-redesign {
+  font-family: "Space Grotesk", sans-serif;
+  min-height: 100vh;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  background: #f4efe5;
+  color: #111;
+  overflow: hidden;
+}
+.login-redesign .login-showcase {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #ffd447;
+  border-right: 3px solid #111;
+  padding: 34px 5vw 30px;
+  position: relative;
+  overflow: hidden;
+}
+.login-redesign .login-showcase:before {
+  content: "01";
+  position: absolute;
+  right: 5%;
+  top: 5%;
+  font: 900 clamp(120px, 18vw, 280px)/0.8 "Space Grotesk";
+  opacity: 0.12;
+}
+.login-redesign .login-showcase:after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  background: #6ca9ff;
+  border: 3px solid #111;
+  right: 9%;
+  bottom: 12%;
+  transform: rotate(12deg);
+  box-shadow: 8px 8px 0 #111;
+}
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 25px;
+  line-height: 0.8;
+  letter-spacing: -0.07em;
+  z-index: 2;
+}
+.brand-o {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border: 3px solid #111;
+  background: #ff78b7;
+  box-shadow: 4px 4px 0 #111;
+  font-size: 22px;
+}
+.brand-lockup small {
+  display: block;
+  font:
+    7px "DM Mono",
+    monospace;
+  letter-spacing: 0.03em;
+  margin-top: 8px;
+}
+.showcase-copy {
+  max-width: 900px;
+  z-index: 2;
+}
+.showcase-kicker {
+  display: inline-block;
+  border: 3px solid #111;
+  background: #fffdf8;
+  padding: 7px 10px;
+  font:
+    9px "DM Mono",
+    monospace;
+  box-shadow: 4px 4px 0 #111;
+}
+.showcase-copy h1 {
+  font-size: clamp(52px, 7vw, 104px);
+  line-height: 0.82;
+  letter-spacing: -0.085em;
+  margin: 22px 0;
+}
+.showcase-copy h1 span {
+  color: #fffdf8;
+  text-shadow: 3px 3px 0 #111;
+}
+.showcase-copy > p {
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 680px;
+  margin-bottom: 25px;
+}
+.feature-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 760px;
+}
+.feature {
+  border: 3px solid #111;
+  background: #fffdf8;
+  padding: 13px;
+  box-shadow: 5px 5px 0 #111;
+}
+.feature:nth-child(2) {
+  background: #b9ee59;
+}
+.feature:nth-child(3) {
+  background: #ff78b7;
+}
+.feature-icon {
+  font-size: 20px;
+  margin-bottom: 13px;
+}
+.feature b,
+.feature small {
+  display: block;
+}
+.feature b {
+  font-size: 11px;
+}
+.feature small {
+  font:
+    7px/1.5 "DM Mono",
+    monospace;
+  margin-top: 4px;
+}
+.campus-art {
+  height: 70px;
+}
+.quote {
+  font:
+    8px/1.5 "DM Mono",
+    monospace;
+  max-width: 500px;
+  z-index: 2;
+}
+.quote b {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 10px;
+}
+.login-redesign .login-panel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 40px;
+  background: #f4efe5;
+  overflow: auto;
+}
+.login-redesign .theme-button {
+  position: absolute;
+  right: 25px;
+  top: 22px;
+  padding: 8px 11px;
+  border: 3px solid #111;
+  background: #fffdf8;
+  color: #111;
+  font:
+    9px "DM Mono",
+    monospace;
+  box-shadow: 3px 3px 0 #111;
+}
+.login-redesign .login-card-redesign {
+  width: min(440px, 100%);
+  background: #fffdf8;
+  border: 3px solid #111;
+  border-radius: 0;
+  padding: 30px;
+  box-shadow: 9px 9px 0 #111;
+}
+.login-redesign .card-logo {
+  text-align: left;
+  color: #111;
+  font-weight: 700;
+  font-size: 29px;
+  letter-spacing: -0.07em;
+}
+.login-redesign .card-logo span {
+  display: inline-block;
+  background: #6ca9ff;
+  border: 2px solid #111;
+  padding: 1px 5px;
+  margin-right: 4px;
+}
+.login-redesign .card-sub {
+  font:
+    7px "DM Mono",
+    monospace;
+  letter-spacing: 0.12em;
+  margin-top: 7px;
+  color: #625d54;
+}
+.login-redesign .login-card-redesign h2 {
+  font-size: 31px;
+  letter-spacing: -0.06em;
+  margin: 25px 0 4px;
+}
+.login-redesign .card-description {
+  font:
+    9px "DM Mono",
+    monospace;
+  color: #625d54;
+  margin: 0 0 17px;
+}
+.login-redesign .role-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+.login-redesign .role-tabs button {
+  padding: 10px 5px;
+  border: 3px solid #111;
+  background: #f4efe5;
+  color: #111;
+  font-size: 9px;
+  font-weight: 700;
+  box-shadow: 3px 3px 0 #111;
+}
+.login-redesign .role-tabs button.active {
+  background: #111;
+  color: #fff;
+}
+.login-redesign form {
+  display: grid;
+  gap: 11px;
+  margin-top: 17px;
+}
+.login-redesign .input-wrap {
+  display: flex;
+  align-items: center;
+  border: 3px solid #111;
+  background: #fffdf8;
+  box-shadow: 3px 3px 0 #111;
+}
+.login-redesign .input-wrap span {
+  width: 34px;
+  text-align: center;
+  font-size: 12px;
+}
+.login-redesign input {
+  width: 100%;
+  height: 43px;
+  border: 0 !important;
+  background: transparent;
+  padding: 0 10px;
+  color: #111;
+  outline: 0;
+  font-size: 10px;
+  box-shadow: none !important;
+}
+.login-redesign input:focus {
+  background: #fff8c9;
+}
+.login-redesign .login-submit {
+  height: 45px;
+  border: 3px solid #111;
+  border-radius: 0;
+  background: #6ca9ff;
+  color: #111;
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 5px 5px 0 #111;
+}
+.login-redesign .login-submit:hover {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 2px 0 #111;
+}
+.login-redesign .demo-note {
+  margin-top: 12px;
+  padding: 9px;
+  border: 2px dashed #111;
+  background: #ffd447;
+  font:
+    8px "DM Mono",
+    monospace;
+}
+.login-redesign .account-link {
+  width: 100%;
+  margin-top: 13px;
+  padding: 10px;
+  border: 3px solid #111;
+  background: #ff78b7;
+  color: #111;
+  font-size: 9px;
+  font-weight: 700;
+  box-shadow: 3px 3px 0 #111;
+}
+.login-redesign .login-error {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 9px;
+  border: 3px solid #111;
+  background: #ff6262;
+  color: #111;
+  font:
+    8px "DM Mono",
+    monospace;
+}
+.login-redesign .form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font:
+    8px "DM Mono",
+    monospace;
+}
+.login-redesign .remember {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.login-redesign .remember input {
+  width: 14px;
+  height: 14px;
+}
+.login-redesign .forgot {
+  background: transparent;
+  color: #111;
+  text-decoration: underline;
+  font:
+    8px "DM Mono",
+    monospace;
+}
+.login-footer {
+  position: absolute;
+  bottom: 14px;
+  left: 30px;
+  right: 30px;
+  display: flex;
+  justify-content: space-between;
+  font:
+    7px "DM Mono",
+    monospace;
+  color: #625d54;
+}
+html[data-theme="dark"] .login-redesign {
+  background: #171717;
+  color: #fff;
+}
+.login-redesign html[data-theme="dark"] .login-panel {
+  background: #171717;
+}
+.login-redesign .login-panel {
+  background: #f4efe5;
+}
+.login-redesign .login-card-redesign {
+  color: #111;
+}
+@media (max-width: 900px) {
+  .login-redesign {
+    grid-template-columns: 1fr;
+  }
+  .login-redesign .login-showcase {
+    display: none !important;
+  }
+  .login-redesign .login-panel {
+    min-height: 100vh;
+  }
+  .login-footer {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .login-redesign .login-panel {
+    padding: 20px;
+  }
+  .login-redesign .login-card-redesign {
+    padding: 22px 18px;
+  }
+  .login-redesign .role-tabs {
+    grid-template-columns: 1fr;
+  }
+  .login-redesign .theme-button {
+    right: 15px;
+    top: 14px;
+  }
+  .login-redesign .login-card-redesign h2 {
+    font-size: 27px;
+  }
+}
