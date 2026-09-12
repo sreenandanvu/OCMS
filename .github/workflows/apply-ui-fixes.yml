@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message, 'Apply OCMS UI fixes') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +20,10 @@ jobs:
 
           admin = Path('client/src/admin/AdminModule.jsx')
           text = admin.read_text(encoding='utf-8')
+
+          if 'confirmingDelete' in text:
+              print('UI patch already applied; nothing to do.')
+              raise SystemExit(0)
 
           old = """  const [editing, setEditing] = useState(null);\n  const [loading, setLoading] = useState(true);\n  const [error, setError] = useState('');"""
           new = """  const [editing, setEditing] = useState(null);\n  const [confirmingDelete, setConfirmingDelete] = useState(null);\n  const [loading, setLoading] = useState(true);\n  const [error, setError] = useState('');"""
@@ -79,26 +82,14 @@ jobs:
           if marker not in text:
               raise SystemExit('FormModal marker not found')
           text = text.replace(marker, component + marker, 1)
-
           admin.write_text(text, encoding='utf-8')
 
           css = Path('client/src/styles-clean.css')
           style = css.read_text(encoding='utf-8')
-          marker = ".hero:after {\n"
-          if marker not in style:
-              raise SystemExit('hero pseudo-element not found')
-          style = style.replace(marker, marker + "  pointer-events: none;\n", 1)
-          css.write_text(style, encoding='utf-8')
-
-      - name: Add confirm modal styling
-        shell: python
-        run: |
-          from pathlib import Path
-          css = Path('client/src/styles-clean.css')
-          text = css.read_text(encoding='utf-8')
-          marker = "\n.confirm-modal .modal-card {"
-          if marker not in text:
-              text += """
+          if 'pointer-events: none;' not in style.split('.hero:after {', 1)[1].split('}', 1)[0]:
+              style = style.replace('.hero:after {\n', '.hero:after {\n  pointer-events: none;\n', 1)
+          if '.confirm-modal .confirm-card' not in style:
+              style += """
 
 .confirm-modal .confirm-card {
   width: min(460px, 100%);
@@ -149,7 +140,7 @@ jobs:
   filter: brightness(0.94);
 }
 """
-          css.write_text(text, encoding='utf-8')
+          css.write_text(style, encoding='utf-8')
 
       - name: Commit UI fixes
         run: |
